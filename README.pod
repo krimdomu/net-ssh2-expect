@@ -1,0 +1,49 @@
+=pod
+
+=head2 Simple Expect-Like Module for Net::SSH2
+
+=head2 Example
+
+ #!/usr/bin/perl 
+ 
+ 
+ use strict;
+ use warnings;
+ 
+ use Net::SSH2;
+ use Net::SSH2::Expect;
+ 
+ my $ssh2 = Net::SSH2->new();
+ 
+ $ssh2->connect('test01') or die $!;
+ 
+ if($ssh2->auth_password('root', 'test')) {
+     my $exp = Net::SSH2::Expect->new($ssh2);
+     $exp->spawn("LC_ALL=C passwd");
+     $exp->expect(5, [
+                         qr/Enter new UNIX password:/ => sub {
+                                                             my ($exp, $line) = @_;
+                                                             print "> new pw\n";
+                                                             $exp->send("blah\n");
+                                                         }
+                     ],
+                     [
+                         qr/Retype new UNIX password:/ => sub {
+                                                             my ($exp, $line) = @_;
+                                                             print ">> retype\n";
+                                                             $exp->send("blah\n");
+                                                         }
+                     ],
+                     [
+                         qr/passwd: password updated successfully/ => sub {
+                                                             my ($exp, $line) = @_;
+                                                             print ">>> all done\n";
+                                                             $exp->hard_close;
+                                                         }
+                     ]);
+ }
+ else {
+     print  "failed auth\n";
+ }
+
+
