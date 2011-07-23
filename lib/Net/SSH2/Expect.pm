@@ -4,12 +4,63 @@
 # vim: set expandtab:
 #
 
+=head1 NAME
+
+Net::SSH2::Expect - An Expect like module for Net::SSH2
+
+=head1 DESCRIPTION
+
+This is a module to have expect like features for Net::SSH2. This is the first version of this module. Please report bugs at GitHub L<https://github.com/krimdomu/net-ssh2-expect>
+
+=head1 DEPENDENCIES
+
+=over 4
+
+=item *
+
+L<Net::SSH2>
+
+=back
+
+=head1 SYNOPSIS
+
+ use Net::SSH2::Expect;
+       
+ my $exp = Net::SSH2::Expect->new($ssh2);
+ $exp->spawn("passwd");
+ $exp->expect($timeout, [
+                           qr/Enter new UNIX password:/ => sub {
+                                                              my ($exp, $line) = @_;
+                                                              $exp->send($new_password);
+                                                           },
+                           qr/Retype new UNIX password:/ => sub {
+                                                              my ($exp, $line) = @_;
+                                                              $exp->send($new_password);
+                                                           },
+                           qr/passwd: password updated successfully/ => sub {
+                                                                           my ($exp, $line) = @_;
+                                                                           $exp->hard_close;
+                                                                        },
+                        ]);
+
+=head1 CLASS METHODS
+
+=cut
+
 package Net::SSH2::Expect;
 
 use strict;
 use warnings;
 
 our $VERSION = "0.1";
+
+=over 4
+
+=item new($ssh2)
+
+Constructor: You need to parse an connected Net::SSH2 Object. 
+
+=cut
 
 sub new {
    my $that = shift;
@@ -30,6 +81,11 @@ sub shell {
    return $self->{"__shell"};
 }
 
+=item spawn($command, @parameters)
+
+Spawn $command with @parameters as parameters.
+
+=cut
 sub spawn {
    my ($self, $command, @parameters) = @_;
 
@@ -37,15 +93,33 @@ sub spawn {
    $self->shell->write($cmd . "\n");
 }
 
+=item soft_close()
+
+Currently only an alias to hard_close();
+
+=cut
+
 sub soft_close {
    my ($self) = @_;
    $self->hard_close;
 }
 
+=item hard_close();
+
+Stops the execution of the process.
+
+=cut
+
 sub hard_close {
    my ($self) = @_;
    die;
 }
+
+=item expect($timeout, @match_patters)
+
+This method controls the execution of your process.
+
+=cut
 
 sub expect {
    my ($self, $timeout, @match_patterns) = @_;
@@ -68,6 +142,12 @@ sub expect {
    };
 }
 
+=item send($string)
+
+Send a string to the running command.
+
+=cut
+
 sub send {
    my ($self, $str) = @_;
    $self->shell->write($str);
@@ -84,6 +164,10 @@ sub _check_patterns {
       }
    }
 }
+
+=back
+
+=cut
 
 1;
 
