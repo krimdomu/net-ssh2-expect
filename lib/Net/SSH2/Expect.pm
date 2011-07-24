@@ -62,6 +62,8 @@ Constructor: You need to parse an connected Net::SSH2 Object.
 
 =cut
 
+our $Log_Stdout = 1;
+
 sub new {
    my $that = shift;
    my $proto = ref($that) || $that;
@@ -72,8 +74,19 @@ sub new {
    $self->{"__shell"} = $_[0]->channel();
    $self->{"__shell"}->pty("vt100");
    $self->{"__shell"}->shell;
+   $self->{"__log_stdout"} = $Net::SSH2::Expect::Log_Stdout;
 
    return $self;
+}
+
+=item log_stdout(0|1)
+
+Log on STDOUT.
+
+=cut
+sub log_stdout {
+   my ($self, $log) = @_;
+   $self->{"__log_stdout"} = $log;
 }
 
 sub shell {
@@ -132,6 +145,10 @@ sub expect {
       while(1) {
          my $buf;
          $self->shell->read($buf, 1);
+
+         # log to stdout if wanted
+         print $buf if $self->{"__log_stdout"};
+
          if($self->_check_patterns($line, @match_patterns)) {
             $line = "";
             alarm $timeout;
