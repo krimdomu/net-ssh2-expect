@@ -74,7 +74,9 @@ sub new {
    $self->{"__shell"} = $_[0]->channel();
    $self->{"__shell"}->pty("vt100");
    $self->{"__shell"}->shell;
+
    $self->{"__log_stdout"} = $Net::SSH2::Expect::Log_Stdout;
+   $self->{"__log_to"} = sub {};
 
    return $self;
 }
@@ -87,6 +89,16 @@ Log on STDOUT.
 sub log_stdout {
    my ($self, $log) = @_;
    $self->{"__log_stdout"} = $log;
+}
+
+=item log_file($file)
+
+Log everything to a file. $file can be a filename, a filehandle or a subRef.
+
+=cut
+sub log_file {
+   my ($self, $file) = @_;
+   $self->{"__log_to"} = $file;
 }
 
 sub shell {
@@ -103,7 +115,7 @@ sub spawn {
    my ($self, $command, @parameters) = @_;
 
    my $cmd = "$command " . join(" ", @parameters);
-   $self->shell->write($cmd . "\n");
+   $self->shell->write("$cmd\n");
 }
 
 =item soft_close()
@@ -148,6 +160,7 @@ sub expect {
 
          # log to stdout if wanted
          print $buf if $self->{"__log_stdout"};
+         $self->_log($buf);
 
          if($self->_check_patterns($line, @match_patterns)) {
             $line = "";
@@ -180,6 +193,26 @@ sub _check_patterns {
          return 1;
       }
    }
+}
+
+sub _log {
+   my ($self, $str) = @_;
+
+   my $log_to = $self->{"__log_to"};
+
+   if(ref($log_to) eq "CODE") {
+      &$log_to($str);
+   }
+   elsif(ref($log_to) eq "GLOB") {
+      print $log_to $str;
+   }
+   else {
+      # log to a file
+      open(my $fh, ">>", $log_to) or die($!);
+      print $fh $str;
+      close($fh);
+   }
+
 }
 
 =back
