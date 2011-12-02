@@ -76,9 +76,11 @@ sub send {
 sub _check_patterns {
    my ($self, $line, @match_patterns) = @_;
 
-   for my $pattern (@match_patterns) {
-      if($line =~ $pattern->[0]) {
-         my $code = $pattern->[1];
+   my $pattern_hash = { @{$match_patterns[0]} };
+
+   for my $pattern (keys %{ $pattern_hash }) {
+      if($line =~ $pattern) {
+         my $code = $pattern_hash->{$pattern};
          &$code($self, $line);
          return 1;
       }
