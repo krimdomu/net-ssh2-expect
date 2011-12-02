@@ -165,7 +165,7 @@ sub expect {
          if($self->_check_patterns($line, @match_patterns)) {
             $line = "";
             alarm $timeout;
-            next;
+            last;
          }
          $line .= $buf;
       }
