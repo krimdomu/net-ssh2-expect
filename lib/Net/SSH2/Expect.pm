@@ -115,7 +115,45 @@ sub spawn {
    my ($self, $command, @parameters) = @_;
 
    my $cmd = "$command " . join(" ", @parameters);
+
+   $self->shell->write("echo 'randomnum'\n");
+
+   my $line = "";
+   while($line ne "randomnum\r") {
+      my $buf;
+      $self->shell->read($buf, 1);
+
+      if($buf eq "\n") {
+         $line = "";
+         next;
+      }
+
+      $line .= $buf;
+   }
+
+   print "got random\n";
+
+   $self->shell->write("PS1=''\n");
+
    $self->shell->write("$cmd\n");
+
+   $line = "";
+   while(1) {
+      my $buf;
+      $self->shell->read($buf, 1);
+      if($buf eq "\r") { next; }
+      $line .= $buf;
+
+      if($line =~ m/^$cmd\n/s) {
+         last;
+      }
+
+      if($buf eq "\n") {
+         $line = "";
+         next;
+      }
+   }
+
 }
 
 =item soft_close()
@@ -157,6 +195,7 @@ sub expect {
       while(1) {
          my $buf;
          $self->shell->read($buf, 1);
+         if($buf eq "\r") { next; }
 
          # log to stdout if wanted
          print $buf if $self->{"__log_stdout"};
@@ -165,9 +204,15 @@ sub expect {
          if($self->_check_patterns($line, @match_patterns)) {
             $line = "";
             alarm $timeout;
-            last;
+            next;
+         #   last;
          }
          $line .= $buf;
+
+         if($buf eq "\n") {
+            $line = "";
+         }
+
       }
    };
 }
@@ -189,6 +234,7 @@ sub _check_patterns {
    my $pattern_hash = { @{$match_patterns[0]} };
 
    for my $pattern (keys %{ $pattern_hash }) {
+   #print ">> $line == $pattern << \n";
       if($line =~ $pattern) {
          my $code = $pattern_hash->{$pattern};
          &$code($self, $line);
