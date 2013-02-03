@@ -133,18 +133,24 @@ sub spawn {
 
    print "got random\n";
 
-   $self->shell->write("PS1=''\n");
-
    $self->shell->write("$cmd\n");
+   $self->shell->flush;
 
    $line = "";
+   my $counter = 0;
    while(1) {
       my $buf;
       $self->shell->read($buf, 1);
       if($buf eq "\r") { next; }
       $line .= $buf;
 
-      if($line =~ m/^$cmd\n/s) {
+      if($line =~ m/$cmd\n/s) {
+         $counter++;
+         print "count up\n";
+      }
+
+      if($line =~ m/$cmd\n/s && $counter==2) {
+      print "got cmd\n";
          last;
       }
 
@@ -188,7 +194,7 @@ sub expect {
    my ($self, $timeout, @match_patterns) = @_;
 
    eval {
-      local $SIG{'ALRM'} = sub { die; };
+      local $SIG{'ALRM'} = sub { print "going to die\n"; die; };
       alarm $timeout;
 
       my $line = "";
@@ -203,9 +209,10 @@ sub expect {
 
          if($self->_check_patterns($line, @match_patterns)) {
             $line = "";
+            print "refresh timeout ($timeout)\n";
             alarm $timeout;
-            next;
-         #   last;
+            #next;
+            last;
          }
          $line .= $buf;
 
@@ -214,6 +221,8 @@ sub expect {
          }
 
       }
+   } or do {
+      return;
    };
 }
 
