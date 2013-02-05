@@ -37,10 +37,6 @@ L<Net::SSH2>
                                                               my ($exp, $line) = @_;
                                                               $exp->send($new_password);
                                                            },
-                           qr/passwd: password updated successfully/ => sub {
-                                                                           my ($exp, $line) = @_;
-                                                                           $exp->hard_close;
-                                                                        },
                         ]);
 
 =head1 CLASS METHODS
@@ -52,7 +48,7 @@ package Net::SSH2::Expect;
 use strict;
 use warnings;
 
-our $VERSION = "0.1";
+our $VERSION = "0.2";
 
 =over 4
 
