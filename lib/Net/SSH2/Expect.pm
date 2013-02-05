@@ -212,7 +212,6 @@ sub expect {
 
          if($line =~ m/^___END___0_/) {
             $? = 0;
-            $self->{error_code} = $1;
             $success = 1;
             last;
          }
