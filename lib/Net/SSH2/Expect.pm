@@ -128,7 +128,10 @@ sub spawn {
       $line .= $buf;
    }
 
-   $self->shell->write("PS1=''\n$cmd\necho ___END___\$?_\n");
+   $cmd .= " && echo ___END___0_";
+
+   #$self->shell->write("PS1=''\n$cmd\necho ___END___\$?_\n");
+   $self->shell->write("$cmd\n");
    $self->shell->flush;
 
    $line = "";
@@ -186,7 +189,9 @@ This method controls the execution of your process.
 sub expect {
    my ($self, $timeout, @match_patterns) = @_;
 
+   $? = 1;
    eval {
+      my $success = 0;
       local $SIG{'ALRM'} = sub { die; };
       alarm $timeout;
 
@@ -205,10 +210,10 @@ sub expect {
             next;
          }
 
-         if($line =~ m/^___END___(\d+)_/) {
-            $? = $1;
+         if($line =~ m/^___END___0_/) {
+            $? = 0;
             $self->{error_code} = $1;
-            pop(@{ $self->{output} });
+            $success = 1;
             last;
          }
 
@@ -222,6 +227,11 @@ sub expect {
          }
 
       }
+
+      if($self->{output}->[0] =~ m/^\s*$/) {
+         shift @{ $self->{output} };
+      }
+      return $success;
    } or do {
       return;
    };
