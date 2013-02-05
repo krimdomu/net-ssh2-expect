@@ -212,7 +212,7 @@ sub expect {
             last;
          }
 
-         #print $buf if $self->{"__log_stdout"};
+         print $buf if $self->{"__log_stdout"};
          $self->_log($buf);
 
          if($buf eq "\n") {
