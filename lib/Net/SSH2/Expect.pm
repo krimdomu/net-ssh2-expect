@@ -187,7 +187,7 @@ sub expect {
    my ($self, $timeout, @match_patterns) = @_;
 
    eval {
-      local $SIG{'ALRM'} = sub { print "going to die\n"; die; };
+      local $SIG{'ALRM'} = sub { die; };
       alarm $timeout;
 
       my $line = "";
@@ -244,7 +244,6 @@ sub _check_patterns {
    my $pattern_hash = { @{$match_patterns[0]} };
 
    for my $pattern (keys %{ $pattern_hash }) {
-   #print ">> $line == $pattern << \n";
       if($line =~ $pattern) {
          my $code = $pattern_hash->{$pattern};
          &$code($self, $line);
