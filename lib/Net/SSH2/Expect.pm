@@ -77,6 +77,7 @@ sub new {
 
    $self->{"__log_stdout"} = $Net::SSH2::Expect::Log_Stdout;
    $self->{"__log_to"} = sub {};
+   $self->{"output"} = [];
 
    return $self;
 }
@@ -131,9 +132,7 @@ sub spawn {
       $line .= $buf;
    }
 
-   print "got random\n";
-
-   $self->shell->write("$cmd\n");
+   $self->shell->write("PS1=''\n$cmd\necho ___END___\$?_\n");
    $self->shell->flush;
 
    $line = "";
@@ -146,11 +145,9 @@ sub spawn {
 
       if($line =~ m/$cmd\n/s) {
          $counter++;
-         print "count up\n";
       }
 
       if($line =~ m/$cmd\n/s && $counter==2) {
-      print "got cmd\n";
          last;
       }
 
@@ -204,19 +201,27 @@ sub expect {
          if($buf eq "\r") { next; }
 
          # log to stdout if wanted
-         print $buf if $self->{"__log_stdout"};
-         $self->_log($buf);
+         $line .= $buf;
 
          if($self->_check_patterns($line, @match_patterns)) {
             $line = "";
-            print "refresh timeout ($timeout)\n";
             alarm $timeout;
-            #next;
+            next;
+         }
+
+         if($line =~ m/^___END___(\d+)_/) {
+            $? = $1;
+            $self->{error_code} = $1;
+            pop(@{ $self->{output} });
             last;
          }
-         $line .= $buf;
+
+         #print $buf if $self->{"__log_stdout"};
+         $self->_log($buf);
 
          if($buf eq "\n") {
+            chomp $line;
+            push(@{ $self->{output} }, $line);
             $line = "";
          }
 
