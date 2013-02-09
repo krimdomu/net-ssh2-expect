@@ -10,7 +10,7 @@ Net::SSH2::Expect - An Expect like module for Net::SSH2
 
 =head1 DESCRIPTION
 
-This is a module to have expect like features for Net::SSH2. This is the first version of this module. Please report bugs at GitHub L<https://github.com/krimdomu/net-ssh2-expect>
+This is a module to have expect like features for Net::SSH2. Please report bugs at GitHub L<https://github.com/krimdomu/net-ssh2-expect>
 
 =head1 DEPENDENCIES
 
